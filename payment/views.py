@@ -4,9 +4,9 @@ from django.http import JsonResponse
 
 import stripe 
 
-stripe.api_key = ('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')
+stripe.api_key = ('sk_test_51JwLLhHFbz0HMj76pDwHqQFXuokHvgq5ACDQ8SY9WcfcaGhUn3hwhJMYdGB8545KxgyU52G4WD3tVC3NLjX9cd3S00HbGVLm3N')
 stripe.ApplePayDomain.create(
-  domain_name='3efe-14-246-138-247.ngrok.io',
+  domain_name='drfauthproject.herokuapp.com',
 )
 # Create your views here.
 def index(request):
