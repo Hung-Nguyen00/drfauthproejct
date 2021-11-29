@@ -31,11 +31,13 @@ class CreateOrderView(generics.ListCreateAPIView):
         return serializer.save(customer=self.request.user)
 
 
-class CreateOrderView(generics.RetrieveUpdateDestroyAPIView):
+class RetrieveUpdateOrderView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = OrderSerializer
     permissions_class = (permissions.IsAuthenticated, IsOwnerOrder)
     queryset = Order.objects.all()
 
+    def query_object(self, request):
+        return self.queryset.filter(user=request.user, complete=False).last()
     
 class CreateOrderDetailView(generics.ListCreateAPIView):
     serializer_class = OrderDetailSerializer
@@ -48,3 +50,4 @@ class CreateOrderDetailView(generics.ListCreateAPIView):
         except Order.DoesNotExist:
             raise Response({'error': 'Order not found'})
         return self.queryset.filter(order=order)
+    

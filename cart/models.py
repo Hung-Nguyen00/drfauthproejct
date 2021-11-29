@@ -99,8 +99,6 @@ class Order(TimeStampedModel):
     class Meta:
         ordering = ('created',)
 
-    def __str__(self):
-        return str(self.id)
 
 
 class OrderDetail(TimeStampedModel):

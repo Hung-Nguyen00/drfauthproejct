@@ -4,6 +4,7 @@ from rest_framework import serializers
 from django.db.models import F, Sum
 from django.contrib.auth.models import User
 from cart.models import Product, Order, OrderDetail
+from cart.services.order import OrderService
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -17,20 +18,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'code', 'slug', 'price', 'get_image', 'get_thumbnail']
-
-
-class OrderSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Order
-        fields = ['complete', 'total']
+        fields = ['id', 'name', 'code', 'slug',
+                  'price', 'get_image', 'get_thumbnail']
 
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(
         read_only=True, default=serializers.CurrentUserDefault())
-    product_id = serializers.UUIDField(write_only=True)
+    product_id = serializers.UUIDField(required=False)
 
     class Meta:
         model = OrderDetail
@@ -70,3 +65,31 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             order.total = total
             order.save()
         return orderdetail
+
+
+class BuyProductSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField()
+    quantity = serializers.IntegerField(default=1)
+    price = serializers.DecimalField(max_digits=11, decimal_places=2)
+
+    class Meta:
+        model = Product
+        fields = ['id', 'quantity', 'price']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    order_detail = OrderDetailSerializer(many=True, required=False)
+    products = BuyProductSerializer(many=True, write_only=True, required=False)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'total', 'order_detail', 'products']
+
+    def update(self, instance, validated_data):
+        products = self.context['request'].data.get('products')
+        product_ids = [product.get('id') for product in products if product]
+        if product_ids == []:
+            OrderDetail.objects.filter(order=instance).delete()
+            return super().update(instance, validated_data)
+        OrderService.addProductToOrder(instance, product_ids, products)
+        return super().update(instance, validated_data)
